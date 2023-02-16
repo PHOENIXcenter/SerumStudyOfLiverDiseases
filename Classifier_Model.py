@@ -19,7 +19,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from Feature_Importance import extractFeatureLabel,KFoldSplit
+from Feature_Importance import extractFeatureLabel,kFoldSplit
 
 def parseJson(jsonSavePath):
     """Exract the features information of the training set and the test set in json file."""
@@ -113,7 +113,7 @@ def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,cl
     """
     # K-Fold Test Set
     testFoldResDF = pd.DataFrame()
-    for featureTrainFold,labelTrainFold,featureTestFold,labelTestFold in KFoldSplit(
+    for featureTrainFold,labelTrainFold,featureTestFold,labelTestFold in kFoldSplit(
         featureTrain,labelTrain,kfold=5,randomState=12345):
         labelTestFoldTrue,labelTestFoldScore,labelTestFoldPred = estimatorSchedule(
             featureTrainFold,labelTrainFold,featureTestFold,labelTestFold,classifier=classifier)
@@ -124,7 +124,7 @@ def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,cl
     # Validation Set
     labelValidationScoreList = list()
     validationResDF = pd.DataFrame(labelValidation.values,columns=["yTrue"],index=labelValidation.index)
-    for featureTrainFold,labelTrainFold,_,_ in KFoldSplit(
+    for featureTrainFold,labelTrainFold,_,_ in kFoldSplit(
         featureTrain,labelTrain,kfold=5,randomState=12345):
         _,labelValidationScore,_ = estimatorSchedule(
             featureTrainFold,labelTrainFold,featureValidation,labelValidation,classifier=classifier)
@@ -133,7 +133,7 @@ def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,cl
     validationResDF["yPred"] = pd.cut(validationResDF["yScore"],bins=[-np.inf,0.5,np.inf],labels=[0,1])
     return testFoldResDF,validationResDF
 
-def getClassfierPara(yTrue,yScore,yPred):
+def getClassifierPara(yTrue,yScore,yPred):
     """This function is used to calculate the metrics of the classifier model, \
     including specificity, sensitivity, precision, accuracy, f1-score and auroc"""
     confusionArray = metrics.confusion_matrix(y_true=yTrue, y_pred=yPred,labels=[0,1])
@@ -161,9 +161,9 @@ if __name__=="__main__":
         for classifier in ("Ridge","SVM","KNN","Naive Bayes","Decision Tree","Random Forest"):
             testFoldResDF,validationResDF = classifierKFold(
                 featureTrain,labelTrain,featureValidation,labelValidation,classifier=classifier)
-            metricsDF[("K-Fold Test Set",groupName,classifier)] = getClassfierPara(
+            metricsDF[("K-Fold Test Set",groupName,classifier)] = getClassifierPara(
                 *testFoldResDF.transpose().values.tolist())
-            metricsDF[("Validation Set",groupName,classifier)] = getClassfierPara(
+            metricsDF[("Validation Set",groupName,classifier)] = getClassifierPara(
                 *validationResDF.transpose().values.tolist())
     metricsDF = metricsDF.sort_index(axis=1).transpose()
     metricsDF.to_csv(os.path.join(classifierPath,"Classifier_Metrics_LASSO.csv"))

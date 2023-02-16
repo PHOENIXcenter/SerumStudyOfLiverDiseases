@@ -23,4 +23,5 @@ The complete serum proteomics data and clinical data are available from the auth
 
 ## Workflow of machine learning modeling
 
-![Workflow of machine learning modeling](Workflow of machine learning modeling.png)
+
+![Workflow of machine learning modeling](https://github.com/KaikunXu/SerumStudyOfLiverDiseases/blob/main/Workflow%20of%20machine%20learning%20modeling.png)

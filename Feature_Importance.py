@@ -51,7 +51,7 @@ def extractFeatureLabel(dataframe,exp=False,ctrl=False):
         columns=[sample]).replace({ctrl:0,exp:1})
     return features,labels
 
-def KFoldSplit(features,labels,kfold=5,randomState=0):
+def kFoldSplit(features,labels,kfold=5,randomState=0):
     """This function is used to split features and labels with index criteria."""
     kf = KFold(n_splits=kfold,shuffle=True,random_state=randomState)
     splitData = list()
@@ -73,7 +73,7 @@ def lassoCoefLoop(features,labels,kfold=5,epochMax=100):
     for randomState in np.arange(0,epochMax,1):
         coefState = pd.DataFrame(index=features.columns).rename_axis(columns=["Fold"])
         fold = 1
-        for featureTrain,labelTrain,_,_ in KFoldSplit(features,labels,kfold=kfold,randomState=randomState):
+        for featureTrain,labelTrain,_,_ in kFoldSplit(features,labels,kfold=kfold,randomState=randomState):
             # Random select samples k times in each loop by k-fold split;
             # Only k-1/k of the training set is used to assess the importance of features.
             coefState["Fold_{0}".format(fold)] = lassoCoef(features=featureTrain,labels=labelTrain)
