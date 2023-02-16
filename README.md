@@ -17,14 +17,12 @@
 | [Classifier_Model.py](Classifier_Model.py)       | Contains machine learning modeling and performance evaluation part. We separately evaluated the performance of 6 classical machine learning models (SVM, Ridge, KNN, Naïve Bayes, Decision Tree and Random Forest) in each pairwise comparisons using corresponding candidate markers in both 5-fold discovery cohort and independent validation cohort. The main evaluation index are F1-score and AUROC. |
 | [Model_Visualization.py](Model_Visualization.py) | Contains visualization of machine learning models, including confusion matrix and ROC curve of both 5-fold discovery cohort and validation cohort. |
 
-## Statement
+## Data Availability
 
 The complete serum proteomics data and clinical data are available from the authors upon reasonable request due to the need to maintain patient confidentiality.
 
+The mass spectrometry proteomics data have been deposited to the ProteomeXchange Consortium (http://proteomecentral.proteomexchange.org) via the iProX partner repository with the dataset identifier PXD034201.
+
 ## Workflow of machine learning modeling
 
-<<<<<<< HEAD
-
-=======
->>>>>>> c6677f12277bb347003753ffb58485d199ae2afa
 ![Workflow of machine learning modeling](https://github.com/KaikunXu/SerumStudyOfLiverDiseases/blob/main/Workflow%20of%20machine%20learning%20modeling.png)
