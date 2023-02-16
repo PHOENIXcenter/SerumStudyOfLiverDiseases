@@ -1,9 +1,10 @@
 ## ==========================================================================================================
-## Script name: Model_Visulization.py
-## Purpose of script: This script is used to generate the result plots of the machine learning model, 
-## including confusion matrix and ROC curve of K-Fold set and validation set.
-## Date Updated: 2023-02-14
-## Copyright (c) 2023. All rights reserved.
+## Script name: Model_Visualization.py
+## Purpose of script: This script is used to generate the result plots of the machine learning models,
+## including confusion matrix and ROC curve of 5-Fold Discovery cohort and independent Validation cohort.
+## Author: Kaikun Xu
+## Date Updated: 2023-02-16
+## Copyright (c) Kaikun Xu 2023. All rights reserved.
 ## ==========================================================================================================
 import sys, os, re
 import json

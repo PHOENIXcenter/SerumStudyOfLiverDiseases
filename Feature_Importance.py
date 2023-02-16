@@ -1,8 +1,10 @@
 ## ==========================================================================================================
 ## Script name: Feature_Importance.py
-## Purpose of script: Calculate feature importance of each protein feature via RF or LASSO
-## Date Updated: 2023-02-03
-## Copyright (c) 2023. All rights reserved.
+## Purpose of script: Calculate feature importance of each protein feature via LASSO regression model,
+##                    Proteins selected in at least 10% of the sub-models are as candidate protein features.
+## Author: Kaikun Xu
+## Date Updated: 2023-02-16
+## Copyright (c) Kaikun Xu 2023. All rights reserved.
 ## ==========================================================================================================
 import sys, os, re
 import json
@@ -65,7 +67,7 @@ def lassoCoef(features,labels):
     lassoModel.fit(X=features.values,y=labels.values.reshape(-1))
     return lassoModel.coef_
 
-def LassoCoefLoop(features,labels,kfold=5,epochMax=100):
+def lassoCoefLoop(features,labels,kfold=5,epochMax=100):
     """Select the most important features for classification by lasso modeling with the down-sampled data."""
     coefDF = pd.DataFrame()
     for randomState in np.arange(0,epochMax,1):
@@ -128,7 +130,7 @@ if __name__=="__main__":
         # Extract features and labels from origin dataframe.
         featureTrain,labelTrain = extractFeatureLabel(trainingDF,exp=exp,ctrl=ctrl)
         # Calculate feature importance and save as csv file.
-        featureImportanceDF = LassoCoefLoop(featureTrain,labelTrain,kfold=5,epochMax=100)
+        featureImportanceDF = lassoCoefLoop(featureTrain,labelTrain,kfold=5,epochMax=100)
         featureImportanceDF.to_csv(os.path.join(classifierPath,"{0}_{1}_Lasso_Coef.csv".format(exp,ctrl)),na_rep="NA") 
         # Extract the features of training set and validaiton set and save dict as json file.
         resDict = extractFeatures(trainingSetPath=trainingSetPath,validationSetPath=validationSetPath,

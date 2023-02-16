@@ -3,8 +3,9 @@
 ## Purpose of script: On the training set, the classifier of the filtered features is constructed 
 ##                    by the multiple classifier, and the performance evaluation is performed 
 ##                    on both cross-validation k-fold test set and independent validation set.
-## Date Updated: 2023-02-03
-## Copyright (c) 2023. All rights reserved.
+## Author: Kaikun Xu
+## Date Updated: 2023-02-16
+## Copyright (c) Kaikun Xu 2023. All rights reserved.
 ## ==========================================================================================================
 import sys, os, re
 import json
@@ -43,7 +44,7 @@ def ridge(featureTrain,labelTrain,featureValidation,labelValidation):
     labelValidationTrue = np.array(labelValidation).reshape(-1)
     return labelValidationTrue,labelValidationScore,labelValidationPred
 
-def SVM(featureTrain,labelTrain,featureValidation,labelValidation):
+def svm(featureTrain,labelTrain,featureValidation,labelValidation):
     """Predict disease type and evalute model metrics via SVM classifier."""
     estimator = SVC(kernel="rbf",probability=True)
     estimator.fit(X=featureTrain.values, y=labelTrain.values.reshape(-1))
@@ -52,7 +53,7 @@ def SVM(featureTrain,labelTrain,featureValidation,labelValidation):
     labelValidationTrue = np.array(labelValidation).reshape(-1)
     return labelValidationTrue,labelValidationScore,labelValidationPred
 
-def KNN(featureTrain,labelTrain,featureValidation,labelValidation):
+def knn(featureTrain,labelTrain,featureValidation,labelValidation):
     """Predict disease type and evalute model metrics via K neighbors classifier."""
     estimator = KNeighborsClassifier(n_neighbors=2)
     estimator.fit(X=featureTrain.values, y=labelTrain.values.reshape(-1))
@@ -93,9 +94,9 @@ def estimatorSchedule(featureTrain,labelTrain,featureValidation,labelValidation,
     if classifier in ("ridge","Ridge"):
         return ridge(featureTrain,labelTrain,featureValidation,labelValidation)
     elif classifier in ("knn","KNN"):
-        return KNN(featureTrain,labelTrain,featureValidation,labelValidation)
+        return knn(featureTrain,labelTrain,featureValidation,labelValidation)
     elif classifier in ("svm","SVM"):
-        return SVM(featureTrain,labelTrain,featureValidation,labelValidation)
+        return svm(featureTrain,labelTrain,featureValidation,labelValidation)
     elif classifier in ("nb","Naive Bayes"):
         return naiveBayes(featureTrain,labelTrain,featureValidation,labelValidation)
     elif classifier in ("dt","Decision Tree"):
