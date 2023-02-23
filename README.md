@@ -23,6 +23,6 @@ The complete serum proteomics data and clinical data are available from the auth
 
 The mass spectrometry proteomics data have been deposited to the ProteomeXchange Consortium (http://proteomecentral.proteomexchange.org) via the iProX partner repository with the dataset identifier PXD034201.
 
-## Workflow of machine learning modeling
+## Workflow of Machine Learning
 
 ![Workflow of machine learning modeling](https://github.com/KaikunXu/Serum-Study-of-Liver-Diseases/blob/main/Workflow_of_machine_learning_modeling.png)
