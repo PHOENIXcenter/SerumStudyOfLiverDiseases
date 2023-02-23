@@ -25,4 +25,4 @@ The mass spectrometry proteomics data have been deposited to the ProteomeXchange
 
 ## Workflow of Machine Learning
 
-![Workflow of machine learning modeling](https://github.com/KaikunXu/Serum-Study-of-Liver-Diseases/blob/main/Workflow_of_machine_learning_modeling.png)
+![Workflow of machine learning modeling](https://github.com/PHOENIXcenter/SerumStudyOfLiverDiseases/blob/main/Workflow_of_machine_learning_modeling.png)
