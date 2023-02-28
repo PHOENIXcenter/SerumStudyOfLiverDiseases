@@ -100,4 +100,4 @@ if __name__=="__main__":
             groupROC(fpr,tpr,auroc,palette=colorDict,group="AFP (Validation)",ax=axDict[groupName]); formatROC(fig,ax=axDict[groupName])
         axDict[groupName].set_title(groupName.replace("N","HC"),fontsize=16,weight="bold")
     fig.tight_layout()
-    fig.savefig(os.path.join(classifierPath,f"ROC_New.pdf"),bbox_inches="tight")
+    fig.savefig(os.path.join(classifierPath,f"ROC.pdf"),bbox_inches="tight")

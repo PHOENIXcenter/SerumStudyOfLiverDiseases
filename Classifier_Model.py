@@ -173,4 +173,3 @@ if __name__=="__main__":
                 *validationResDF.transpose().values.tolist())
     metricsDF = metricsDF.sort_index(axis=1).transpose()
     metricsDF.to_csv(os.path.join(classifierPath,"Classifier_Metrics_LASSO.csv"))
-metricsDF.loc["Validation Set"].head(10)
