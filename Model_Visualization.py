@@ -3,7 +3,8 @@
 ## Purpose of script: This script is used to generate the result plots of the machine learning models,
 ## including confusion matrix and ROC curve of 5-Fold Discovery cohort and independent Validation cohort.
 ## Author: Kaikun Xu
-## Date Updated: 2023-02-16
+## Date Updated: 2023-02-28
+## ChangeLog: Improve data import method in 2023-02-28
 ## Copyright (c) Kaikun Xu 2023. All rights reserved.
 ## ==========================================================================================================
 import sys, os, re
@@ -69,62 +70,34 @@ if __name__=="__main__":
     afpDF = afpDF.rename(columns={"AFP(ng/mL)":"AFP"}).drop(columns=["Unnamed: 3","DiseaseType"])
     afpDF["AFP"] = afpDF["AFP"].replace({">2000":1638.3}).astype(float)
     afpDF["AFP_Pred"] = pd.cut(afpDF["AFP"],bins=[-np.inf,8.78,np.inf],labels=[0,1])
+    # Set subplots of each pairwise combination.
+    fig,([ax1,ax2,ax3],[ax4,ax5,ax6]) = plt.subplots(ncols=3,nrows=2,figsize=(11.5,7.5))
+    sns.despine(top=True, right=True, left=False, bottom=False) 
+    axDict = {"CHB/N":ax1,"LC/N":ax2,"HCC/N":ax3,"LC/CHB":ax4,"HCC/CHB":ax5,"HCC/LC":ax6}
     for groupName in ["HCC/CHB","HCC/LC","HCC/N","LC/CHB","LC/N","CHB/N"]:
-        # groupName = "LC/CHB"
         # Determine the name of the experimental group and control group.
         exp,ctrl = re.split("/",groupName)
-        # Load data of the training set and the validation set respectively.
-        trainingDF = pd.read_csv(
-            os.path.join(classifierPath,"Training-Set-DIAMS-Integrating-{0}.csv".format(
-            "&".join(re.split("/",groupName)))),header=[0,1],index_col=[0]).transpose()
-        validationDF = pd.read_csv(
-            os.path.join(classifierPath,"Validation-Set-DIAMS-Integrating-{0}.csv".format(
-            "&".join(re.split("/",groupName)))),header=[0,1],index_col=[0]).transpose()
-        # Normalize features by removing the mean and scaling to unit variance.
-        scaler = StandardScaler()
-        trainingDF = pd.DataFrame(scaler.fit_transform(np.log10(trainingDF)),
-                                  index=trainingDF.index,columns=trainingDF.columns)
-        validationDF = pd.DataFrame(scaler.fit_transform(np.log10(validationDF)),
-                                    index=validationDF.index,columns=validationDF.columns)
-        # Extract candidate proteins (n-highest importance) from feature importance file.
-        featureImportanceDF = pd.read_csv(
-            os.path.join(classifierPath,"{0}_{1}_Lasso_Coef.csv".format(exp,ctrl)),
-            index_col=[0],header=[0,1])
-        candidiateList = featureImportanceDF[featureImportanceDF[("Total","Coef_Per")]>0.1].index
-        trainingDF = trainingDF[candidiateList]; validationDF = validationDF[candidiateList]
-        # Extract features and labels from training set and validation set.
-        assert (trainingDF.columns.tolist() == validationDF.columns.tolist()
-               ),"The features of the training set and validation set do not match."
-        featureTrain,labelTrain = extractFeatureLabel(trainingDF,exp=exp,ctrl=ctrl)
-        featureValidation,labelValidation = extractFeatureLabel(validationDF,exp=exp,ctrl=ctrl)
-        # Calculate pred score and pred label of SVM model
-        testFoldResDF,validationResDF = classifierKFold(
-            featureTrain,labelTrain,featureValidation,labelValidation,classifier=classifier)
-        # Plot confusion matrix of SVM model
-        testFoldTrue,testFoldScore,testFoldPred = testFoldResDF.transpose().values.tolist()
-        labelValidationTrue,labelValidationScore,labelValidationPred = validationResDF.transpose().values.tolist()
-        figTest,axTest = confusionHeatmap(
-            yTrue=testFoldTrue,yPred=testFoldPred,exp=exp,ctrl=ctrl,
-            title="K-Fold Test Set: {0}/{1}".format(exp,ctrl))
-        figTest.savefig(os.path.join(
-            classifierPath,"CM_KFoldTestSet_{0}_{1}.pdf".format(exp,ctrl)),bbox_inches="tight")
-        figValidation,axValidation = confusionHeatmap(
-            yTrue=labelValidationTrue,yPred=labelValidationPred,exp=exp,ctrl=ctrl,
-            title="Validation Set: {0}/{1}".format(exp,ctrl))
-        figValidation.savefig(os.path.join(
-            classifierPath,"CM_ValidationSet_{0}_{1}.pdf".format(exp,ctrl)),bbox_inches="tight")
-        # Plot ROC of SVM model
-        colorDict ={f"{classifier} (K-Fold)":"tab:orange",f"{classifier} (Validation)":"tab:red",
-                    "AFP (Validation)":"gray"}
-        fig,ax = emptyROC()
-        # fpr,tpr,auroc = rocDataPreparation(yTrue=testFoldResDF["yTrue"],yScore=testFoldResDF["yScore"])
-        # groupROC(fpr,tpr,auroc,palette=colorDict,group="K-Fold",ax=ax); formatROC(fig,ax)
-        validationResDF = pd.merge(left=validationResDF,right=afpDF,left_index=True,right_index=True,how="left")
+        # Load features of the training set and the validation set respectively.
+        jsonSavePath = os.path.join(classifierPath,"{0}_{1}_LassoCoef_FeatureInfo.json".format(exp,ctrl))
+        featureTrain,labelTrain,featureValidation,labelValidation = parseJson(jsonSavePath)
+        # Calculate pred score and pred label of SVM model.
+        testFoldResDF,validationResDF = classifierKFold(featureTrain,labelTrain,
+                                                        featureValidation,labelValidation,classifier=classifier)
+        # Plot ROC of SVM model.
+        colorDict ={f"{classifier} (k-Fold)":"tab:orange",f"{classifier} (Validation)":"tab:red","AFP (Validation)":"gray"}
+        axDict[groupName].plot([0, 1], [0, 1], 'k--')
+        axDict[groupName].set_xlim(-0.05, 1.05); axDict[groupName].set_ylim(-0.05, 1.05)
+        ## ROC for SVM in k-fold test set.
+        fpr,tpr,auroc = rocDataPreparation(yTrue=testFoldResDF["yTrue"],yScore=testFoldResDF["yScore"])
+        groupROC(fpr,tpr,auroc,palette=colorDict,group=f"{classifier} (k-Fold)",ax=axDict[groupName]); formatROC(fig,axDict[groupName])
+        ## ROC for SVM in validation set.
         fpr,tpr,auroc = rocDataPreparation(yTrue=validationResDF["yTrue"],yScore=validationResDF["yScore"])
-        groupROC(fpr,tpr,auroc,palette=colorDict,group=f"{classifier} (Validation)",ax=ax); formatROC(fig,ax)
+        groupROC(fpr,tpr,auroc,palette=colorDict,group=f"{classifier} (Validation)",ax=axDict[groupName]); formatROC(fig,ax=axDict[groupName])
+        ## ROC for AFP in validation set.
         if groupName in ["HCC/CHB","HCC/LC","LC/CHB"]:
+            validationResDF = pd.merge(left=validationResDF,right=afpDF,left_index=True,right_index=True,how="left")
             fpr,tpr,auroc = rocDataPreparation(yTrue=validationResDF["yTrue"],yScore=validationResDF["AFP_Pred"])
-            groupROC(fpr,tpr,auroc,palette=colorDict,group="AFP (Validation)",ax=ax); formatROC(fig,ax)
-        ax.set_title(groupName,fontsize=16,weight="bold")
-        fig.savefig(
-            os.path.join(classifierPath,"ROC_ValidationSet_{0}_{1}.pdf".format(exp,ctrl)),bbox_inches="tight")
+            groupROC(fpr,tpr,auroc,palette=colorDict,group="AFP (Validation)",ax=axDict[groupName]); formatROC(fig,ax=axDict[groupName])
+        axDict[groupName].set_title(groupName.replace("N","HC"),fontsize=16,weight="bold")
+    fig.tight_layout()
+    fig.savefig(os.path.join(classifierPath,f"ROC_New.pdf"),bbox_inches="tight")

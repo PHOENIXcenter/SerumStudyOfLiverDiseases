@@ -4,7 +4,8 @@
 ##                    by the multiple classifier, and the performance evaluation is performed 
 ##                    on both cross-validation k-fold test set and independent validation set.
 ## Author: Kaikun Xu
-## Date Updated: 2023-02-16
+## Date Updated: 2023-02-28
+## ChangeLog: Improve method in parse json file in 2023-02-28
 ## Copyright (c) Kaikun Xu 2023. All rights reserved.
 ## ==========================================================================================================
 import sys, os, re
@@ -23,12 +24,17 @@ from Feature_Importance import extractFeatureLabel,kFoldSplit
 
 def parseJson(jsonSavePath):
     """Exract the features information of the training set and the test set in json file."""
-    with open(jsonSavePath,'r',encoding='utf8') as jsonFile:
+    with open(jsonSavePath,'r',encoding='utf-8') as jsonFile:
         resDict = json.load(jsonFile)
-    featureTrain = pd.DataFrame.from_dict(resDict["featureTrain"])
-    labelTrain = pd.DataFrame.from_dict(resDict["labelTrain"])
-    featureValidation = pd.DataFrame.from_dict(resDict["featureValidation"])
-    labelValidation = pd.DataFrame.from_dict(resDict["labelValidation"])
+    # The Json storage format may change the order of samples, resorting index here.
+    featureTrain = pd.DataFrame.from_dict(resDict["featureTrain"]).rename_axis(
+        index="PatientID",columns="GeneName").sort_index()
+    labelTrain = pd.DataFrame.from_dict(resDict["labelTrain"]).rename_axis(
+        index="PatientID").sort_index()
+    featureValidation = pd.DataFrame.from_dict(resDict["featureValidation"]).rename_axis(
+        index="PatientID",columns="GeneName").sort_index()
+    labelValidation = pd.DataFrame.from_dict(resDict["labelValidation"]).rename_axis(
+        index="PatientID").sort_index()
     return featureTrain,labelTrain,featureValidation,labelValidation
 
 def ridge(featureTrain,labelTrain,featureValidation,labelValidation):
@@ -104,7 +110,7 @@ def estimatorSchedule(featureTrain,labelTrain,featureValidation,labelValidation,
     elif classifier in ("rf","Random Forest"):
         return randomForest(featureTrain,labelTrain,featureValidation,labelValidation)
 
-def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,classifier="SVM"):
+def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,classifier="SVM",randomState=12345):
     """The classifier model is constructed by using 5-fold cross-validation, \
     and predicted scores are calculated on both cross-validation test set and independent validation set:
     
@@ -114,7 +120,7 @@ def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,cl
     # K-Fold Test Set
     testFoldResDF = pd.DataFrame()
     for featureTrainFold,labelTrainFold,featureTestFold,labelTestFold in kFoldSplit(
-        featureTrain,labelTrain,kfold=5,randomState=12345):
+        featureTrain,labelTrain,kfold=5,randomState=randomState):
         labelTestFoldTrue,labelTestFoldScore,labelTestFoldPred = estimatorSchedule(
             featureTrainFold,labelTrainFold,featureTestFold,labelTestFold,classifier=classifier)
         testFoldResSub = pd.DataFrame([labelTestFoldTrue,labelTestFoldScore,labelTestFoldPred],
@@ -125,7 +131,7 @@ def classifierKFold(featureTrain,labelTrain,featureValidation,labelValidation,cl
     labelValidationScoreList = list()
     validationResDF = pd.DataFrame(labelValidation.values,columns=["yTrue"],index=labelValidation.index)
     for featureTrainFold,labelTrainFold,_,_ in kFoldSplit(
-        featureTrain,labelTrain,kfold=5,randomState=12345):
+        featureTrain,labelTrain,kfold=5,randomState=randomState):
         _,labelValidationScore,_ = estimatorSchedule(
             featureTrainFold,labelTrainFold,featureValidation,labelValidation,classifier=classifier)
         labelValidationScoreList.append(labelValidationScore)
@@ -140,7 +146,7 @@ def getClassifierPara(yTrue,yScore,yPred):
     tn, fp, fn, tp = confusionArray.ravel()
     specificity = tn/(tn+fp) # True negative rate (TNR)
     sensitivity = tp/(tp+fn) # True positive rate (TPR), Recall
-    precision = tp/(tp+fp)# Positive predictive value (PPV)
+    precision = tp/(tp+fp) # Positive predictive value (PPV)
     accuracy = metrics.accuracy_score(y_true=yTrue, y_pred=yPred)
     f1Score = metrics.f1_score(y_true=yTrue, y_pred=yPred)
     auroc = metrics.roc_auc_score(y_true=yTrue, y_score=yScore) # Area under ROC
@@ -151,7 +157,7 @@ if __name__=="__main__":
     metricsDF = pd.DataFrame(index=["Specificity", "Sensitivity", "Precision","Accuracy", "F1-Score", "AUROC"],
                              columns=pd.MultiIndex.from_arrays(
                                  [[],[],[]],names=("Dataset","Comparsion","Classifier")))
-    for groupName in ["HCC/CHB","HCC/LC","HCC/N","LC/CHB","LC/N","CHB/N"]:
+    for groupName in ["CHB/N","LC/N","HCC/N","LC/CHB","HCC/CHB","HCC/LC"]:
         # Determine the name of the experimental group and control group.
         exp,ctrl = re.split("/",groupName)
         # Load features of the training set and the validation set respectively.
@@ -167,4 +173,4 @@ if __name__=="__main__":
                 *validationResDF.transpose().values.tolist())
     metricsDF = metricsDF.sort_index(axis=1).transpose()
     metricsDF.to_csv(os.path.join(classifierPath,"Classifier_Metrics_LASSO.csv"))
-    metricsDF.loc["Validation Set"].head(10)
+metricsDF.loc["Validation Set"].head(10)
